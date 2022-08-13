@@ -1,99 +1,55 @@
-/* THE ENTIRE SEQUENCE OF WRITING TO REGISTERS IS COPID FROM MONOLITHIC VIRTUAL BENCH 2.0 I2C TRANSMISSION
-  EXCEPT SOME READ OPERATIONS
-  LOOKS LIKE VALUES WRITTEN TO REGISTER D6 CONTROL VOUT
-  BECAUSE THE FIRST VALUES WIRTTEN TO D6 ARE IDENTICAL FOR 2V AND 5V
-  THE SECOND VALUE (0x70 vs 0x71) MAY BE THE KEY
-  UTIMATELY, THE VOUT MIGHT BE CONTROLLED BY TWO BYTES
+/*  PINOUT
+*   A0 - PF4 (ATMEGA 2560)
+*   A1 - PF5 (ATMEGA 2560)
+*   A2 - PF6 (ATMEGA 2560)
+*   A3 - PF7 (ATMEGA 2560)
+*   A4 - SDA (PD3603A)
+*   A5 - SCL (PD3603A)
+*   D13- EN  (PD3603A)
 */
 
 #include <Wire.h>
 
-// #define PSU_ADDR  0x21
 #define PSU_ADDR  0x28
 
-uint8_t buffer[2] = {0};
-uint8_t i = 0;
-
 void setup() {
-  // DDRB |= (1 << PB7);
+  uint8_t d0 = 80;                    // inital reference voltage
+  uint8_t d1 = 112;                   // initial output range
+  uint8_t signal = 0;
+  uint8_t signal_temp = 0;
 
-  Serial.begin(115200);
+  pinMode(13, OUTPUT);
+  digitalWrite(13, LOW);              // disable PSU
   
-  // Wire.begin();
+  Wire.begin();
+  Serial.begin(115200);
+  Serial.println("psu ready");
+  for (;;) {
+    signal_temp = PINC&0x0F;          // extract low 4 bits
+    Serial.println(signal_temp);
+    if (signal_temp == signal) {
+      continue;
+    }
+    
+    signal = signal_temp;
+    
+    if (signal > 0) {
+      digitalWrite(13, HIGH);         // enable PSU
+      send(d0+signal*2, d1);
+    }
+    else {
+      digitalWrite(13, LOW);          // disable PSU
+    }
 
-  Serial.println("PSU ready");
+    // static uint8_t i = 90;
+    // send(i++,d1);
+    // delay(2000);
 
-  uint8_t d0 = 60;
-  uint8_t d1 = 0x70;
+    // uint8_t signal_temp = PINC&0x0F;
+    // Serial.println(signal_temp);
+    // delay(2000);
+  }
 
-  // for (;;) {
-  //   while (Serial.available()) {
-  //     uint8_t u = Serial.read();
-  //     if (u == '\r') {
-  //       i = 0;
-  //       PORTB ^= (1 << PB7);
-  //       break;
-  //     }
-  //     buffer[i++] = u;
-  //   }
-
-  //   send(buffer[0], buffer[1]);
-  // }
-
-  /* setps through all values, works with terminal or python script */
-  // for (;;) {
-  //   if (Serial.available()) {
-  //     uint8_t u = Serial.read();
-
-  //     switch(u) {
-  //       case '0':
-  //         d1 = 0x70;
-  //         break;
-
-  //       case '1':
-  //         d1 = 0x71;
-  //         break;
-
-  //       case '2':
-  //         d1 = 0x73;
-  //         break;
-
-  //       case '+':
-  //         d0++;
-  //         send(d0, d1);
-  //         break;
-
-  //       case '-':
-  //         d0--;
-  //         send(d0, d1);
-  //         break;
-
-  //       default:
-  //         break;
-  //     }
-  //   }
-  // }
-
-  // for (uint8_t i=0x3C;i<0xFF;i++) {   // steps through 0.60 ~ 1.99 (V)
-  //   send(i, 0x73);
-  //   Serial.print("Write to register: ");
-  //   Serial.println(i, HEX);
-  //   PORTB ^= (1 << PB7);
-  // }
-
-  // for (uint8_t i=0xFF;i>0x3C;i--) {   // steps through 2.00 ~ 2.99 (V)
-  //   send(i, 0x70);
-  //   Serial.print("Write to register: ");
-  //   Serial.println(i, HEX);
-  //   // PORTB ^= (1 << PB7);
-  // }
-
-  // for (uint8_t i=0x3C;i<0xFF;i++) {   // steps through 3.00 ~ 12.57 (V)
-  //   send(i, 0x71);
-  //   Serial.print("Write to register: ");
-  //   Serial.println(i, HEX);
-  //   PORTB ^= (1 << PB7);
-  // }  
 }
 
 void loop() {

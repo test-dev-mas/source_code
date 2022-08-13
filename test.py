@@ -71,6 +71,9 @@ def main():
 	arduino = Arduino()
 	dmm = DMM()
 
+	d0 = 0x3C
+	d1 = 0x71
+
 	f = open('02.csv', 'w')	
 	writer = csv.writer(f)
 
@@ -79,10 +82,10 @@ def main():
 	arduino.write(b'0')
 
 	while True:
-		arduino.write(b'+')
+		arduino.write(d0)
 		time.sleep(5)
 		ret=dmm.measure_volt()
-		writer.writerow([ret])
+		writer.writerow([d0, ret])
 		print(ret)
 		time.sleep(5)
 
